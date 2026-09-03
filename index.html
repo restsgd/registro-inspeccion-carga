@@ -12,37 +12,36 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="RIC Carga">
 <style>
-  html, body { margin:0; padding:0; height:100%; background:#0f4c81; font-family: system-ui, -apple-system, sans-serif; }
+  html, body { margin:0; padding:0; min-height:100%; background:#0f4c81; font-family: system-ui, -apple-system, sans-serif; }
   #splash {
-    position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:#0f4c81; color:#ffffff; gap:16px;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:#0f4c81; color:#ffffff; gap:14px; padding:24px; box-sizing:border-box; text-align:center;
   }
-  #splash img { width:88px; height:88px; border-radius:16px; }
-  #splash p { font-size:14px; opacity:.85; margin:0; }
-  #install-btn {
-    margin-top:8px; display:none;
-    background:#ffffff; color:#0f4c81; border:none; padding:10px 18px; border-radius:24px;
-    font-size:14px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,.25); cursor:pointer;
+  #splash img { width:96px; height:96px; border-radius:20px; }
+  #splash h1 { font-size:18px; margin:4px 0 0; font-weight:600; }
+  #splash p { font-size:14px; opacity:.85; margin:0; max-width:320px; }
+  .btn {
+    margin-top:10px; border:none; padding:14px 24px; border-radius:28px;
+    font-size:15px; font-weight:600; cursor:pointer; width:100%; max-width:320px;
   }
-  #manual-link { margin-top:14px; font-size:13px; }
-  #manual-link a { color:#ffffff; }
+  #install-btn { background:#ffffff; color:#0f4c81; display:none; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  #open-btn { background:transparent; color:#ffffff; border:2px solid rgba(255,255,255,.5) !important; }
+  #ios-help { display:none; font-size:13px; opacity:.9; max-width:300px; margin-top:6px; background:rgba(255,255,255,.12); padding:12px; border-radius:12px; }
 </style>
 </head>
 <body>
   <div id="splash">
     <img src="icons/icon-192.png" alt="Logo">
-    <p>Abriendo Registro Servicios Inspección de Carga…</p>
-    <button id="install-btn">Instalar app en este equipo</button>
-    <div id="manual-link"><a href="https://script.google.com/macros/s/AKfycbwEpQ_7C0yKgnaJ__X5Xh76PkrAxC2-ecb7u-vFdrcPAHrzeyA-QrtoVabehMKDmkZ_/exec">Si no redirige solo, toca aquí</a></div>
+    <h1>Registro Servicios Inspección de Carga</h1>
+    <p>Instala el ícono en este equipo para acceso rápido, o abre el formulario directamente.</p>
+
+    <button id="install-btn" class="btn">📲 Instalar app en este equipo</button>
+    <div id="ios-help">En iPhone/iPad: toca el botón compartir (□↑) de Safari y elige "Agregar a pantalla de inicio".</div>
+
+    <button id="open-btn" class="btn">Abrir formulario de inspección</button>
   </div>
 
   <script>
-    // NOTA TÉCNICA: Google bloquea la carga de Apps Script dentro de un
-    // iframe alojado en un dominio externo (política de seguridad de
-    // Google, no de esta página). Por eso este wrapper NO usa iframe:
-    // en vez de eso, redirige automáticamente a la app real. El ícono
-    // instalado sigue funcionando igual — al tocarlo, pasa por aquí un
-    // instante y abre el formulario real.
     const DESTINO = "https://script.google.com/macros/s/AKfycbwEpQ_7C0yKgnaJ__X5Xh76PkrAxC2-ecb7u-vFdrcPAHrzeyA-QrtoVabehMKDmkZ_/exec";
 
     if ('serviceWorker' in navigator) {
@@ -51,6 +50,14 @@
 
     let deferredPrompt;
     const installBtn = document.getElementById('install-btn');
+    const openBtn = document.getElementById('open-btn');
+    const iosHelp = document.getElementById('ios-help');
+
+    // Detecta iOS (Safari no dispara beforeinstallprompt, hay que guiar manualmente)
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    if (isIos) {
+      iosHelp.style.display = 'block';
+    }
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -64,19 +71,18 @@
       await deferredPrompt.userChoice;
       deferredPrompt = null;
       installBtn.style.display = 'none';
-      window.location.href = DESTINO;
     });
 
     window.addEventListener('appinstalled', () => {
       installBtn.style.display = 'none';
     });
 
-    // Redirección automática a los 1.2s si el usuario no interactúa con
-    // el botón de instalar (esto le da tiempo al navegador de mostrar el
-    // prompt de instalación antes de saltar a la app real).
-    setTimeout(() => {
-      if (document.visibilityState !== 'hidden') window.location.href = DESTINO;
-    }, 1200);
+    // Solo navega a la app real cuando el usuario lo pide explícitamente.
+    // NO hay redirección automática: así el botón de instalar alcanza a
+    // aparecer y no desaparece antes de poder tocarlo.
+    openBtn.addEventListener('click', () => {
+      window.location.href = DESTINO;
+    });
   </script>
 </body>
 </html>
